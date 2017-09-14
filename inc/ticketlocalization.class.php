@@ -1,5 +1,6 @@
 <?php
 
+
 class PluginUnsTicketLocalization extends CommonGLPI
 {
     public function getTabNameForItem(CommonGLPI $item, $withtemplate = 0)
@@ -14,6 +15,9 @@ class PluginUnsTicketLocalization extends CommonGLPI
 
     public static function displayTabContentForItem(CommonGLPI $item, $tabnum = 1, $withtemplate = 0)
     {
+       
+        
+
         $coordenadas1 = "geo_preparacion_i";
         $coordenadas2 = "geo_preparacion_f";
         $coordenadas3 = "geo_viaje_ida_i";
@@ -77,7 +81,6 @@ class PluginUnsTicketLocalization extends CommonGLPI
         if (is_null($viaje_retorno_f) || empty($viaje_retorno_f)) {
             $total_total = self::diffTime($preparacion_i, $tiempo_actual);
         } else {
-
             $total_total = self::diffTime($preparacion_i, $viaje_retorno_f);
         }
 
@@ -94,13 +97,47 @@ class PluginUnsTicketLocalization extends CommonGLPI
 
         //self::GetTechnician($item);
         $listaTecnicos = self::GetTechnician($item);
+        //echo "los tecnicos son: $listaTecnicos";
+        //$test1=self::RecibirDatos($tecnico);
 
         echo "<!DOCTYPE html>
         <html lang='en'>
         <head>
         <meta charset='UTF-8'>
-        <link rel='stylesheet' type='text/css' href='/plugins/uns/css/tabs.css' media='screen' />
+        <link rel='stylesheet' type='text/css' href='../plugins/uns/css/tabs.css' media='screen' />
         <title>Document</title>
+        
+        
+        <script type=\'text/javascript\'>
+        $(document).ready(function(){
+            $('#select_tecnicos').change(function(){
+                var tecnico = document.getElementById('select_tecnicos').value;
+                //alert('Selected value is : ' + tecnico);
+        
+                
+                $.ajax({
+                    type: 'POST',
+                    url: '/plugins/uns/front/ticketlocalization.form.php',
+                    
+                    data: {var_tecnico2: tecnico},
+                    success: function(result)
+                    {
+                       console.log('Enviado satisfactoriamente');
+                       console.log('');
+                    }
+                       ,
+                       error:function(exception){alert('Exeption:'+exception);}
+                       
+                    
+                }); 
+             
+            });
+          });
+
+        
+        
+        </script>
+
         <script type=\'text/javascript\'>
         var tabs = $('#tabs-titles li'); //grab tabs
         var contents = $('#tabs-contents li'); //grab contents
@@ -114,10 +151,14 @@ class PluginUnsTicketLocalization extends CommonGLPI
         </script>
 
         </head>
+
         <body>
+        
+        
         <div style='text-align:left; margin-left: 30px;margin-bottom: 10px;'>
-        <label>Técnico: <select>$listaTecnicos</select></label>
+        <label>Técnico: <select id='select_tecnicos'>$listaTecnicos</select></label>
         </div>
+        
 
         <ul id='tabs-titles'>
         <li class='current'> <!-- default (on page load), first one is currently displayed -->
@@ -267,8 +308,14 @@ class PluginUnsTicketLocalization extends CommonGLPI
 
         </body>
         </html>";
-
     }
+    
+    public static function RecibirDatos($tecnico)
+    {
+        
+        return $tecnico;
+    }
+
     public static function showMap(CommonGLPI $item, $coordenadasi, $coordenadasf)
     {
         global $DB;
@@ -293,14 +340,10 @@ class PluginUnsTicketLocalization extends CommonGLPI
         $nodata = "<h3>No hay datos de localización</h3> <br><br><br>";
 
         if (empty($u1) || is_null($u1) || empty($u2) || is_null($u2)) {
-
             return $nodata;
-
         } else {
-
             return $mapa;
         }
-
     }
     public static function showTime(CommonGLPI $item, $tiempo)
     {
@@ -319,17 +362,15 @@ class PluginUnsTicketLocalization extends CommonGLPI
     }
     public static function diffTime($time1, $time2, $pausas)
     {
-
+        $pausas=0;
         if (is_null($time1) || empty($time1)) {
             $total = 0;
             return $total; //botas segundos
-
         } elseif (is_null($time1) || empty($time1)) {
             $time2 = date('Y-m-d H:i:s');
             $diff  = strtotime($time2) - strtotime($time1);
             $total = $diff - $pausas;
             return $total; //botas segundos
-
         } else {
             $diff  = strtotime($time2) - strtotime($time1);
             $total = $diff - $pausas;
@@ -344,12 +385,12 @@ class PluginUnsTicketLocalization extends CommonGLPI
         $dtF = new \DateTime('@0');
         $dtT = new \DateTime("@$seconds");
         return $dtF->diff($dtT)->format('%a días %h horas %i min %s sec');
-
     }
 
     public static function pauseTime(CommonGLPI $item, $tiempo_i, $tiempo_f)
     {
-
+        $pausa_i=[];    
+        $pausa_f=[];    
         global $DB;
         $ticket = $item->getID();
         $sql    = "SELECT pausa_i, pausa_f
@@ -361,7 +402,6 @@ class PluginUnsTicketLocalization extends CommonGLPI
         while ($row = $DB->fetch_assoc($result)) {
             $pausa_i[] = $row['pausa_i'];
             $pausa_f[] = $row['pausa_f'];
-
         }
 
         $long = count($pausa_i);
@@ -369,22 +409,20 @@ class PluginUnsTicketLocalization extends CommonGLPI
         if (is_null($pausa_i) || empty($pausa_i) || is_null($pausa_f) || empty($pausa_f)) {
             $suma = 0;
             return $suma;
-
         } else {
-
             $suma = 0;
             for ($i = 0; $i < $long; $i++) {
                 $diff = strtotime($pausa_f[$i]) - strtotime($pausa_i[$i]);
                 $suma += $diff;
-
             }
             return $suma;
-
         }
     }
 
     public static function pauseReasons(CommonGLPI $item, $tiempo_i, $tiempo_f)
     {
+        $str=0;
+        $motivo=[];        
         global $DB;
         $ticket = $item->getID();
         $sql    = "SELECT motivo
@@ -395,7 +433,6 @@ class PluginUnsTicketLocalization extends CommonGLPI
         $result = $DB->query($sql);
         while ($row = $DB->fetch_assoc($result)) {
             $motivo[] = $row['motivo'];
-
         }
 
         //echo "<select>";
@@ -406,35 +443,39 @@ class PluginUnsTicketLocalization extends CommonGLPI
         //echo "</select>";
 
         return $str;
-
     }
+
+    
     public static function GetTechnician(CommonGLPI $item)
     {
+        $str=0;
+        $nombre = [];
         global $DB;
         $ticket = $item->getID();
 
         $sql="SELECT *
         FROM glpi_plugin_uns_productiontickets T1
-        INNER JOIN glpi_users T2 ON T1.user_id = t2.id
+        INNER JOIN glpi_users T2 ON T1.usuario = T2.name
         WHERE tickets_id=$ticket";
         
-                $result = $DB->query($sql);
-                while ($row = $DB->fetch_assoc($result)) {
-                    $nombre[]    = $row['firstname'];
-                    $apellido[]  = $row['realname'];
-                }
+        $result = $DB->query($sql);
+        while ($row = $DB->fetch_assoc($result)) {
+            $nombre[]    = $row['firstname'];
+            $apellido[]  = $row['realname'];
+        }
 
        // return $nombre[] + $apellido[];
 
        //for para recorrer el array de tecnicos y mostrarlo como opciones de un select
 
-       for ($i = 0; $i < count($nombre); $i++) {
-        $str .= "<option value='$nombre[$i] $apellido[$i]'>$nombre[$i] $apellido[$i]</option>";
-        //echo "<option value='$motivo[$i]'>$motivo[$i]</option>";
+        for ($i = 0; $i < count($nombre); $i++) {
+            $str .= "<option value='$nombre[$i] $apellido[$i]'>$nombre[$i] $apellido[$i]</option>";
+          //echo "<option value='$motivo[$i]'>$motivo[$i]</option>";
         }
         return $str;
-    //    echo "$nombre[1] $apellido[1]";
-    //    echo "$ticket";
+    //echo "$nombre[1] $apellido[1]";
+    //echo "$ticket";
     }
 
+    
 }
